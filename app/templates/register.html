@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Register</h2>
+<form id="register-form">
+    <label>Email: <input type="email" name="email" required></label><br>
+    <label>Password: <input type="password" name="password" required></label><br>
+    <button type="submit">Register</button>
+</form>
+<div id="message"></div>
+<script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const data = {
+            email: form.email.value,
+            password: form.password.value
+        };
+        try {
+            const res = await fetch('/register/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            let json = null;
+            try {
+                json = await res.json();
+            } catch (_e) {
+                
+            }
+            if (res.ok) {
+                document.getElementById('message').innerText = 'Registration successful!';
+            } else {
+                document.getElementById('message').innerText = json?.detail || res.statusText || 'Error';
+            }
+        } catch (err) {
+            document.getElementById('message').innerText = 'Network error';
+        }
+    });
+</script>
+{% endblock %}

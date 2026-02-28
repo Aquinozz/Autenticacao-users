@@ -1,6 +1,6 @@
 # Finance API 💰
 
-API RESTful para gerenciamento de autenticação de usuários com JWT, desenvolvida em FastAPI com PostgreSQL.
+API RESTful para autenticação de usuários com JWT usando FastAPI + PostgreSQL.
 
 ## 📋 Características
 
@@ -18,60 +18,26 @@ API RESTful para gerenciamento de autenticação de usuários com JWT, desenvolv
 - Python 3.9+ (se rodar localmente)
 - PostgreSQL 14+ (se rodar localmente)
 
-## 🚀 Instalação e Configuração
+## 🚀 Quick start (rápido)
 
-### Usando Docker (Recomendado)
+1. Copie o exemplo de variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+2. Suba o banco (docker):
+```bash
+docker compose up -d db
+```
+3. Rode a API (local) ou via Docker:
+```bash
+# local
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-1. **Clone o repositório**
-   ```bash
-   git clone <seu-repo>
-   cd finance-api
-   ```
+# via docker-compose (recomendado quando o DB estiver em container)
+docker compose up --build
+```
 
-2. **Configure as variáveis de ambiente** (opcional)
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Ou crie um arquivo `.env`:
-   ```env
-   SECRET_KEY=sua-chave-secreta-muito-segura-aqui
-   DATABASE_URL=postgresql://user:password@db:5432/finance_db
-   ```
-
-3. **Inicie os containers**
-   ```bash
-   sudo docker compose up --build
-   ```
-
-4. **Acesse a API**
-   - API: http://localhost:8000
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-
-### Instalação Local
-
-1. **Crie um ambiente virtual**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-   ```
-
-2. **Instale as dependências**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure o banco de dados**
-   ```bash
-   # Atualize a DATABASE_URL no app/database.py
-   ```
-
-4. **Execute a aplicação**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+A documentação interativa: http://localhost:8000/docs
 
 ## 📁 Estrutura do Projeto
 
@@ -92,6 +58,18 @@ finance-api/
 ```
 
 ## 🔗 Endpoints
+
+## 🖥️ Web Interface
+
+A aplicação agora inclui páginas HTML simples para interagir com a API via navegador:
+
+* **/** – página inicial com links para registro/login
+* **/register** – formulário de cadastro de usuário
+* **/login** – formulário de login, armazena o token no localStorage
+* **/me/page** – mostra os dados do usuário logado (requer token válido no localStorage)
+
+Os templates estão em `app/templates` e os arquivos estáticos em `app/static`.
+
 
 ### 1. Registrar Novo Usuário
 ```http
@@ -154,20 +132,23 @@ GET /
 }
 ```
 
-## 🔐 Autenticação
+## 🔐 Autenticação (resumido)
 
-A API usa **JWT (JSON Web Tokens)** para autenticação.
+1. Registrar: `POST /register/` com JSON {"email","password"}.  
+   **Obs:** a senha não deve exceder 72 bytes (aprox. 72 caracteres UTF‑8) por causa do limite do bcrypt. O esquema Pydantic valida os caracteres e, se o valor em bytes for maior que 72, ele será **cortado automaticamente** antes de armazenar (o usuário verá um avisocomo resposta 200, mas apenas os primeiros 72 bytes serão usados).
+2. Login: `POST /token` (form) com `username=email` e `password` → recebe `access_token`.
+3. Usar: incluir header `Authorization: Bearer <token>` nas requisições.
+4. Token expira em 30 minutos por padrão.
 
-### Fluxo de autenticação:
+**Nota:** se o servidor retornar um erro 500 ao cadastrar, verifique se a senha excede 72 bytes ou se a biblioteca `bcrypt` está atualizada; o código agora converte essa condição em um 400.
 
-1. Usuário se registra em `/register/` com email e senha
-2. Usuário faz login em `/token` recebendo um `access_token`
-3. Usuário inclui o token no header `Authorization: Bearer {token}` para acessar rotas protegidas
-4. Token expira em 30 minutos (configurável)
-
-### Usando o token com curl:
+Curl rápido:
 ```bash
-curl -H "Authorization: Bearer seu_token_aqui" http://localhost:8000/me
+curl -X POST http://localhost:8000/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=usuario@example.com&password=senha"
+
+curl -H "Authorization: Bearer SEU_TOKEN" http://localhost:8000/me
 ```
 
 ## 🔧 Variáveis de Ambiente

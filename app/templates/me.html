@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Account</h2>
+<div id="info">
+    loading...
+</div>
+<button id="logout">Logout</button>
+<script>
+    async function loadUser() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        try {
+            const res = await fetch('/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Unauthorized');
+            const user = await res.json();
+            document.getElementById('info').innerHTML = `<p>ID: ${user.id}</p><p>Email: ${user.email}</p>`;
+        } catch (err) {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+    }
+    document.getElementById('logout').addEventListener('click', () => {
+        localStorage.removeItem('access_token');
+        window.location.href = '/';
+    });
+    loadUser();
+</script>
+{% endblock %}
